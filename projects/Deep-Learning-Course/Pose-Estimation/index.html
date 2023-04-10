@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="icon" href="/assets/img/main_icon.ico" type="image/x-icon">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Amin Fadaeinejad | Human joint Pose Estimator</title>
+  <meta name="description" content="This is the personal website of Amin Fadaeinejad">
+
+  <!-- Fonts and Icons -->
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons" />
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="/assets/css/all.min.css">
+  <link rel="stylesheet" href="/assets/css/academicons.min.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+
+
+<style>
+table, th, td {
+  border: 1px solid black;
+  align-items: center;
+}
+</style>
+
+</head>
+<body>
+  <!-- Header -->
+  <nav id="navbar" class="navbar fixed-top navbar-expand-md grey lighten-5 z-depth-1 navbar-light">
+    <div class="container-fluid p-0">
+      
+        <a class="navbar-brand title font-weight-lighter" href="/"><span class="font-weight-bold">Amin</span> Fadaeinejad</a>
+      
+      <button class="navbar-toggler ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse text-right" id="navbarNav">
+        <ul class="navbar-nav ml-auto flex-nowrap">
+          <li class="nav-item ">
+            <a class="nav-link" href="/">
+              About
+              
+            </a>
+          </li>
+          
+            
+          
+            
+              <li class="nav-item ">
+                  <a class="nav-link" href="/cv/">
+                    Curriculum Vitae
+                    
+                  </a>
+              </li>
+                          
+              <li class="nav-item ">
+                  <a class="nav-link" href="/projects/">
+                    Projects
+                    
+                  </a>
+              </li>
+
+            
+              <li class="nav-item ">
+                  <a class="nav-link" href="/publications/">
+                    Publications
+                    
+                  </a>
+              </li>
+            
+          <li class="nav-item ">
+                  <a class="nav-link" href="/talks">
+                    Talks
+                    
+                  </a>
+              </li>
+          
+              <li class="nav-item ">
+                  <a class="nav-link" href="/teaching/">
+                    Teaching
+                  </a>
+              </li>
+            
+          
+            
+          
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Scrolling Progress Bar -->
+  <progress id="progress" value="0">
+    <div class="progress-container">
+      <span class="progress-bar"></span>
+    </div>
+  </progress>
+
+  <!-- Content -->
+  <div class="content">
+    
+  <h1>Human joint Pose Estimator</h1>
+ 
+
+<p><br /></p>
+
+  <h4>Disclaimer</h4>
+  I tried to reproduce the results from DeepPose: Human Pose Estimation via Deep Neural Networks <a href="https://arxiv.org/pdf/1312.4659.pdf">(project link)</a>. I had no contribution over the original paper, all I did was to recreate the same results from the paper.
+
+<p><br /></p>
+
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_10_v2.PNG" width="65%" height="auto"  id="figure8" />
+    <div class="caption" >Figure 1: My result from reproducing the <a href="https://arxiv.org/pdf/1312.4659.pdf">DeepPose</a></div>
+</div>
+
+<h2 id="more-information">1. Introduction</h2>
+
+<p> The problem of human pose estimation, which involves locating human joints in images, has been extensively studied in the computer vision community. This problem is challenging due to factors such as strong articulations, occlusions, and the need to capture context. Most work in this field has focused on modeling articulations using part-based models, which have limited expressiveness and only model a small subset of interactions between body parts. Holistic methods have been proposed, but have had limited success in real-world problems. In this paper, the authors propose a novel approach to human pose estimation using deep neural networks (DNNs). They show that DNNs can effectively capture the full context of each body joint and present a simple yet powerful formulation of the problem as a joint regression task. They propose a cascade of DNN-based pose predictors to refine joint predictions and achieve state-of-the-art results on four widely used benchmarks. The approach is shown to perform well on images with strong variation in appearance and articulations, and generalizes well across datasets..</p>
+
+<h2 id="more-information">2. Architecture</h2>
+
+<h4 id="overview">2.1 Pose Vector</h4>
+
+<ul>
+  <li>The authors of this paper have devised a technique to depict the human body in the form of pose. This is achieved by encoding the location of all `k` body parts into joints which are collectively known as a pose vector. The definition of this pose vector is outlined in the paper.</li>
+  <li>In this context, the notation `y_i` refers to the `x` and `y` coordinates representing the location of the ith body joint.</li>
+  <li>The representation of the image in this paper is structured as a tuple `(x, y)`, where x is the image data and `y` represents the ground truth pose vector data.</li>
+  <li>The described coordinates are absolute image coordinates on the full image size, which can cause issues if the image is resized. To avoid this, the coordinates are normalized with respect to a bounding box that encloses the human body or parts of it. These bounding boxes are represented by `b = (b_c, b_h, b_w)`, where `b_c` is the center of the bounding box and `b_h` and `b_w` are the height and width of the bounding box, respectively.</li>
+  <li>We normalized the location coordinates using following formula. </li>
+  <div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_1.PNG" width="45%" height="auto"  id="figure0" />
+  </div>
+  <li>Finally we get the normalized Pose vector coordinates.</li>
+  <div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_2.PNG" width="45%" height="auto"  id="figure1" />
+  </div>
+
+</ul>
+
+
+<h4 id="overview">2.2 CNN Architecture</h4>
+
+<ul>
+  <li>The authors of this paper uses AlexNet as their CNN architecture because it had shown great results on Image Localization task.</li>
+  <div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_3.PNG" width="35%" height="auto"  id="figure2" />
+  </div>
+  <li>The location coordinates were normalized using the following formula, where `theta` denotes trainable parameters (weights and biases) and `psi` denotes the neural architecture applied to normalized pose vector `N(x)`. The predicted output `y*` can be obtained by denormalizing the output `(N-1)`.</li>
+  <li>This neural network architecture takes image of size 220×220 and apply an stride of 4.</li>
+  <li>The CNN architecture contains 7 layers which can be listed as : C(55×55×96) — LRN — P — C(27×27×256) — LRN — P — C(13×13×384) — C(13×13×384) — C(13×13×256) — P — F(4096) — F(4096) </li>
+  <li>Where `C` is convolution layer which uses ReLU as activation function to introduce non-linearity in the model, LRN is local response normalization, `P` is pooling layer, and `F` is fully connected layer.</li>
+  <li>The last layer of architecture outputs `2k` joint coordinates.</li>
+  <li>The architecture uses `L2` loss function to minimize the distance between predicted coordinates and ground truth loss function.</li>
+  <div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_4.PNG" width="45%" height="auto"  id="figure3" />
+  </div>
+
+
+
+
+</ul>
+
+<h4 id="overview">2.3 DNN regressor:</h4>
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_8.PNG" width="95%" height="auto"  id="figure8" />
+    <div class="caption" >Figure 2: An overview of the model: Image from the original paper</div>
+</div>
+
+<ul>
+  <li>It is not easy to increase the input size to have a finer pose estimation since this will increase the already large number of parameters. Thus, a cascade of pose regressors are proposed to refine the pose estimation.</li>
+  <li>Now, we represent the first stage with following equation </li>
+  <div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_5.PNG" width="45%" height="auto"  id="figure4" />
+  </div>
+  <li>Where `b^0` represents full image or bounding box obtained by a person detector.</li>
+  <div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_6.PNG" width="55%" height="auto"  id="figure5" />
+  </div>
+  <li>where diam(y) is the distance of opposing joints, such as left shoulder and right hips, and then scaled by `sigma` to make it  `sigma` `diam(y)`.</li>
+</ul>
+
+
+<h2 id="more-information">3. Accuracy Metrics</h2>
+
+<h4 id="overview">3.1 Percentage of Correct Parts (PCP)</h4>
+
+The Percentage of Correct Parts (PCP) is a metric used to measure the detection rate of limbs. It considers a limb to be detected if the distance between the two predicted joint locations and the true limb joint locations is no more than half of the limb length. However, the PCP metric has limitations in that it penalizes shorter and more difficult to detect limbs.
+
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_pcp.PNG" width="85%" height="auto"  id="figure12" />
+    <div class="caption" >Figure 3: PCP during training</div>
+  </div>
+
+<h4 id="overview">3.2 Percent of Detected Joints (PDJ)</h4>
+
+Another metric called the Percent of Detected Joints (PDJ) has been proposed to address the limitations of the PCP metric. This metric measures joint detection rates by considering a joint to be detected if the distance between the predicted and true joint locations is within a certain fraction of the torso diameter. By adjusting this fraction, detection rates can be obtained for different levels of localization precision.
+
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_pdj.PNG" width="85%" height="auto"  id="figure13" />
+    <div class="caption" >Figure 4: PDJ during training</div>
+  </div>
+
+<h2 id="more-information">4. Results</h2>
+
+After we trained the model, we tested it over the training and testing dataset to see its performace.
+
+<h4 id="overview">4.1 Train images</h4>
+
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_7_v2.PNG" width="65%" height="auto"  id="figure14" />
+    <div class="caption" >Figure 5: Models output using training image</div>
+
+    
+</div>
+
+<h4 id="overview">4.2 Test images</h4>
+
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/pose_9_v2.PNG" width="65%" height="auto"  id="figure8" />
+    <div class="caption" >Figure 6: Models output using testing image</div>
+</div>
+
+<h2 id="more-information">5. Conclusion</h2>
+
+As you can see, the result for both training and testing images are good. However, in order to get a better preformance on the testing images (since the training images are very good) is to increase the number of data sample for training. We can also notice the overfitting effect on <a href="#figure12">Figure 3</a> & <a href="#figure13">Figure 4</a>.
+
+<h2 id="more-information">More infomation</h2>
+
+<ul>
+  <li>Code: <a href="https://github.com/aminfadaei116/Deep-Learning-Course/tree/master/CA2">link</a> </li>
+  <li>Data: <a href="https://paperswithcode.com/dataset/lsp">link</a> </li>
+  <li>Report: <a href="/assets/pdf/Projects-Reports/Report_CA2.pdf">link</a> </li>
+</ul>
+
+  </div>
+
+
+
+  <!-- Footer -->
+  <footer>
+    &copy; Copyright 2023 Amin Fadaeinejad
+    
+    
+  </footer>
+
+  <!-- Core JavaScript Files -->
+  <script src="/assets/js/jquery.min.js" type="text/javascript"></script>
+  <script src="/assets/js/popper.min.js" type="text/javascript"></script>
+  <script src="/assets/js/bootstrap.min.js" type="text/javascript"></script>
+  <script src="/assets/js/mdb.min.js" type="text/javascript"></script>
+  <script async="" src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" integrity="sha384-GNFwBvfVxBkLMJpYMOABq3c+d3KnQxudP/mGPkzpZSTYykLBNsZEnG2D9G/X/+7D" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML"></script>
+  <script src="/assets/js/common.js"></script>
+
+  <!-- Scrolling Progress Bar -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      var navbarHeight = $('#navbar').outerHeight(true);
+      $('body').css({ 'padding-top': navbarHeight });
+      $('progress-container').css({ 'padding-top': navbarHeight });
+      var progressBar = $('#progress');
+      progressBar.css({ 'top': navbarHeight });
+      var getMax = function() { return $(document).height() - $(window).height(); }
+      var getValue = function() { return $(window).scrollTop(); }   
+      // Check if the browser supports the progress element.
+      if ('max' in document.createElement('progress')) {
+        // Set the 'max' attribute for the first time.
+        progressBar.attr({ max: getMax() });
+        progressBar.attr({ value: getValue() });
+    
+        $(document).on('scroll', function() {
+          // On scroll only the 'value' attribute needs to be calculated.
+          progressBar.attr({ value: getValue() });
+        });
+
+        $(window).resize(function() {
+          var navbarHeight = $('#navbar').outerHeight(true);
+          $('body').css({ 'padding-top': navbarHeight });
+          $('progress-container').css({ 'padding-top': navbarHeight });
+          progressBar.css({ 'top': navbarHeight });
+          // On resize, both the 'max' and 'value' attributes need to be calculated.
+          progressBar.attr({ max: getMax(), value: getValue() });
+        });
+      } else {
+        var max = getMax(), value, width;
+        var getWidth = function() {
+          // Calculate the window width as a percentage.
+          value = getValue();
+          width = (value/max) * 100;
+          width = width + '%';
+          return width;
+        }
+        var setWidth = function() { progressBar.css({ width: getWidth() }); };
+        setWidth();
+        $(document).on('scroll', setWidth);
+        $(window).on('resize', function() {
+          // Need to reset the 'max' attribute.
+          max = getMax();
+          setWidth();
+        });
+      }
+    });
+  </script>
+
+  <!-- Code Syntax Highlighting -->
+  <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
+  <script src="/assets/js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  <!-- Script Used for Randomizing the Projects Order -->
+  <!-- <script type="text/javascript">
+    $.fn.shuffleChildren = function() {
+      $.each(this.get(), function(index, el) {
+        var $el = $(el);
+        var $find = $el.children();
+
+        $find.sort(function() {
+          return 0.5 - Math.random();
+        });
+
+        $el.empty();
+        $find.appendTo($el);
+      });
+    };
+    $("#projects").shuffleChildren();
+  </script> -->
+
+  <!-- Project Cards Layout -->
+  <script type="text/javascript">
+    var $grid = $('#projects');
+
+    // $grid.masonry({ percentPosition: true });
+    // $grid.masonry('layout');
+
+    // Trigger after images load.
+    $grid.imagesLoaded().progress(function() {
+      $grid.masonry({ percentPosition: true });
+      $grid.masonry('layout');
+    });
+  </script>
+
+  <!-- Enable Tooltips -->
+  <script type="text/javascript">
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+
+  <!-- Google Analytics -->
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', '', 'auto');
+    ga('send', 'pageview');
+  </script>
+</body>
+</html>

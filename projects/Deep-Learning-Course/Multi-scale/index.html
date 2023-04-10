@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="icon" href="/assets/img/main_icon.ico" type="image/x-icon">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Amin Fadaeinejad | Multi-Scale image segmentation</title>
+  <meta name="description" content="This is the personal website of Amin Fadaeinejad">
+
+  <!-- Fonts and Icons -->
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons" />
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="/assets/css/all.min.css">
+  <link rel="stylesheet" href="/assets/css/academicons.min.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="canonical" href="/projects/2_livex/">
+
+
+<style>
+table, th, td {
+  border: 1px solid black;
+  align-items: center;
+}
+</style>
+
+</head>
+<body>
+  <!-- Header -->
+  <nav id="navbar" class="navbar fixed-top navbar-expand-md grey lighten-5 z-depth-1 navbar-light">
+    <div class="container-fluid p-0">
+      
+        <a class="navbar-brand title font-weight-lighter" href="/"><span class="font-weight-bold">Amin</span> Fadaeinejad</a>
+      
+      <button class="navbar-toggler ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse text-right" id="navbarNav">
+        <ul class="navbar-nav ml-auto flex-nowrap">
+          <li class="nav-item ">
+            <a class="nav-link" href="/">
+              About
+              
+            </a>
+          </li>
+          
+            
+          
+            
+              <li class="nav-item ">
+                  <a class="nav-link" href="/cv/">
+                    Curriculum Vitae
+                    
+                  </a>
+              </li>
+                          
+              <li class="nav-item ">
+                  <a class="nav-link" href="/projects/">
+                    Projects
+                    
+                  </a>
+              </li>
+
+            
+              <li class="nav-item ">
+                  <a class="nav-link" href="/publications/">
+                    Publications
+                    
+                  </a>
+              </li>
+            
+          <li class="nav-item ">
+                  <a class="nav-link" href="/talks/">
+                    Talks
+                    
+                  </a>
+              </li>
+          
+              <li class="nav-item ">
+                  <a class="nav-link" href="/teaching/">
+                    Teaching
+                  </a>
+              </li>
+            
+          
+            
+          
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Scrolling Progress Bar -->
+  <progress id="progress" value="0">
+    <div class="progress-container">
+      <span class="progress-bar"></span>
+    </div>
+  </progress>
+
+  <!-- Content -->
+  <div class="content">
+    
+  <h1>Multi-Scale image segmentation</h1>
+ 
+
+
+
+
+  <p><br /></p>
+
+  <h4>Disclaimer</h4>
+  I tried to reproduce the results from Hierarchical Multi-Scale Attention for Semantic Segmentation <a href="https://arxiv.org/abs/2005.10821">(paper link)</a>. I had no contribution over the original paper, all I did was to recreate the same results from the paper.
+
+<p><br /></p>
+
+ <div style="align: left; text-align:center;">
+    <img src="/assets/img/seg_page.PNG" width="100%" height="auto"  id="figure8" />
+    <div class="caption" > My result from reproducing the <a href="https://arxiv.org/abs/2005.10821">Hierarchical Multi-Scale Attention for Semantic Segmentation</a></div>
+</div>
+
+<h2 id="more-information">1. Introduction</h2>
+
+<p> Image segmentation is a method for categorizing each pixel in a frame. Object detection is one of the many applications that image segmentation has. Instead of processing the entire image, a common practice is first to use image segmentation to find an approximate of the object's region. Then, the object detector can operate on a bounding box already defined by the segmentation algorithm. This prevents the detector from processing the entire image, improving accuracy and reducing inference time. There are many different segmentation models out there, all with unique capabilities and constraints. The <a href="https://arxiv.org/abs/2005.10821">Andrew Tao</a> paper introduced a model that uses different scales of images as input while using output information to make a more accurate segmentation mask.</p>
+
+
+<h2 id="more-information">1.1  Hierarchical multi-scale attention</h2>
+
+One of <a href="https://arxiv.org/abs/2005.10821">Andrew Tao et. al</a> main contributions were where for each scale, a dense mash was learned, 
+and they combined the multi-scale predictions in a pixel-wise manner, followed by pixel-wise summation between different scales to get the final output. They also refer to
+Chen’s method as explicit. They used their hierarchical method to learn a relative attention mask between adjacent scales instead of learning attention masks for each fixed scale set. During training, they only trained them with the adjacent scale pair. This allows the network network learns to predict relative attention for a range of image scales
+
+
+<h2 id="more-information">2. Architect</h2>
+
+<a href="#figure1">Figure 1</a> belonging to the <a href="https://arxiv.org/abs/2005.10821">original paper</a>, shows the architect of the entire model.
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/SegPaper.PNG" width="80%" height="auto" />
+    <div class="caption" id="figure1" >Figure 1: Image from original paper</div>
+</div>
+
+
+<ul>
+  <li>Trunk: One of the key parts in the architect of the model was the structure of the trunk. There were
+several network models for this part of the network, we used ResNet50, ResNet101, and MobileNet for this part on the network.</li>
+  <li>Segmentation: One of the other key parts of the network was the segmentation part of the model, wherein the following paper hasn't clearly mentioned what kind of segmentation model they have used, so we tried DeepLab V3 and DeepLeab V3 + for the segmentation part, in the following we are going to give some information about this two networks.
+   </li>
+
+</ul>
+
+
+<h4 id="more-information">2.1 Model components</h4>
+
+<ul>
+  <li>Backbone: ResNet-50 </li>
+  <li>Semantic Head:  (3𝑥3 𝑐𝑜𝑛𝑣) → (𝐵𝑁) → (𝑅𝑒𝐿𝑈) → (3𝑥3 𝑐𝑜𝑛𝑣) → (𝐵𝑁) → (𝑅𝑒𝐿𝑈) →
+(1𝑥1𝑐𝑜𝑛𝑣) </li>
+  <li>Attention Head </li>
+  <li>Auxiliary semantic head: (1𝑥1 𝑐𝑜𝑛𝑣) → (𝐵𝑁) → (𝑅𝑒𝐿𝑈) → (1𝑥1 𝑐𝑜𝑛𝑣)</li>
+</ul>
+
+
+
+<h2 id="more-information">3. Dataset</h2>
+
+The dataset that we were using in the following project was the <a href="https://www.cityscapes-dataset.com/">Cityscapes</a> dataset, which was
+labeled for semantic understanding. But we did not need the entire dataset since image segmentation was our only objective.
+<h4 id="more-information">3.1 Data samples</h4>
+
+<a href="#figure2">Figure 2</a> shows a sample ground image and it's segment map.
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/City.PNG" width="80%" height="auto" />
+    <div class="caption" id="figure2" >Figure 2</div>
+</div>
+
+<h4 id="more-information">3.2 Class Definitions</h4>
+
+
+<table style="width:100%" id="table1">
+  <tr>
+    <td>Group</td>
+    <td>Classes</td>
+ 
+  </tr>
+  <tr>
+    <td>Flat</td>
+    <td>road, sidewalk,parking,rail track
+  </td>
+    
+  <tr>
+    <td>Human</td>
+    <td>person, rider</td>
+  </tr>
+
+  <tr>
+    <td>Vehicle</td>
+    <td>car, truck,bus, on rails, motor cycle</td>
+  </tr>
+
+  <tr>
+    <td>Construction</td>
+    <td>building, wall,fense, guard rail, caravan, bridge</td>
+  </tr>
+
+  <tr>
+    <td>Object</td>
+    <td>pole, pole group, traffic sign, traffic light</td>
+  </tr>
+
+  <tr>
+    <td>Nature</td>
+    <td>vegetation, terrain</td>
+  </tr>
+
+  <tr>
+    <td>Sky</td>
+    <td>sky</td>
+  </tr>
+
+  <tr>
+    <td>void</td>
+    <td>ground, dynamic, static</td>
+  </tr>
+
+</table>
+<center > Table 1</center>
+
+
+
+
+
+<h2 id="more-information">4. Training</h2>
+
+In the beginning, our ultimate goal was to build up two-stage and three-stage hierarchical multi-scale attention by trying both Resnet-50 and HRNet-OCD as the trunk and the DeepLab v3+ as the segmentation block. However, this was not possible due to our computational limitations (especially the small GPU memory). Inevitably, we replaced the HRNet-OCD architecture with MobileNet in our experience due to its smaller size and fewer parameters. Even after this, we were still unable to train our models end to end; instead, we relied on transfer learning methods to obtain acceptable results. Our main approach in training the hierarchical models was to train different 3 segmentation models for segmenting images with three scales (2, 1, and 0.5) and eventually use the trained trunk and segmentation blocks for the original models. We use the same architecture as the hierarchical models' initial stage for training trunks and segmentation blocks on images with various sizes.
+
+ <p><br /></p>
+
+<h2 id="more-information">5. Results</h2>
+
+Since the entire was huge, we weren't able to train this model in an end-to-end manner. Instead, we trained each part separately and combined them in the end. <a href="#figure3">Figure 3</a> shows an example of the network we trained. The top image represents the original image. The middle represents the ground truth segmentation. The bottom image represents the predicted segmentation from our model.  
+
+
+<div style="align: left; text-align:center;">
+    <img src="/assets/img/SegRes.PNG" width="80%" height="auto" />
+    <div class="caption" id="figure3" >Figure 3</div>
+</div>
+
+
+<a href="#table2">Table 2</a> shows the result for different architectures.
+
+<table style="width:100%" id="table2">
+  <tr>
+    <td>Trunk</td>
+    <td>Segmentation Block</td>
+    <td>Image Scale</td>
+    <td>#Epochs</td>
+    <td>Mean IOU</td>
+    <td>Average Accuracy</td>
+  </tr>
+
+
+  <tr>
+    <td>MobileNet</td>
+    <td>DeepLab V3+</td>
+    <td>0.5</td>
+    <td>7</td>
+    <td><strong>51.4%</strong></td>
+    <td>71.3%</td>
+  </tr>
+
+  <tr>
+    <td>MobileNet</td>
+    <td>DeepLab V3+</td>
+    <td>1</td>
+    <td>7</td>
+    <td>50.6%</td>
+    <td>68.7%</td>
+  </tr>
+
+  <tr>
+    <td>MobileNet</td>
+    <td>DeepLab V3+</td>
+    <td>2</td>
+    <td>5</td>
+    <td>50.3%</td>
+    <td>68.2%</td>
+  </tr>
+
+  <tr>
+    <td>ResNet</td>
+    <td>DeepLab V3+</td>
+    <td>0.5</td>
+    <td>6</td>
+    <td>50.1%</td>
+    <td>68.4%</td>
+  </tr>
+
+  <tr>
+    <td>ResNet</td>
+    <td>DeepLab V3+</td>
+    <td>1</td>
+    <td>6</td>
+    <td>48.0%</td>
+    <td><strong>76.3%</strong></td>
+  </tr>
+
+    <tr>
+    <td>ResNet</td>
+    <td>DeepLab V3+</td>
+    <td>2</td>
+    <td>5</td>
+    <td>49.0%</td>
+    <td>68.1%</td>
+  </tr>
+
+    
+
+
+</table>
+<center > Table 2</center>
+
+
+
+<h2 id="more-information">More infomation</h2>
+
+<ul>
+  <li>Code: <a href="https://github.com/aminfadaei116/Deep-Learning-Course/tree/master/Final%20Project">link</a> </li>
+  <li>Data: <a href="https://www.cityscapes-dataset.com/">link</a> </li>
+</ul>
+
+  </div>
+
+
+
+  <!-- Footer -->
+  <footer>
+    &copy; Copyright 2023 Amin Fadaeinejad
+    
+    
+  </footer>
+
+  <!-- Core JavaScript Files -->
+  <script src="/assets/js/jquery.min.js" type="text/javascript"></script>
+  <script src="/assets/js/popper.min.js" type="text/javascript"></script>
+  <script src="/assets/js/bootstrap.min.js" type="text/javascript"></script>
+  <script src="/assets/js/mdb.min.js" type="text/javascript"></script>
+  <script async="" src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" integrity="sha384-GNFwBvfVxBkLMJpYMOABq3c+d3KnQxudP/mGPkzpZSTYykLBNsZEnG2D9G/X/+7D" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML"></script>
+  <script src="/assets/js/common.js"></script>
+
+  <!-- Scrolling Progress Bar -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      var navbarHeight = $('#navbar').outerHeight(true);
+      $('body').css({ 'padding-top': navbarHeight });
+      $('progress-container').css({ 'padding-top': navbarHeight });
+      var progressBar = $('#progress');
+      progressBar.css({ 'top': navbarHeight });
+      var getMax = function() { return $(document).height() - $(window).height(); }
+      var getValue = function() { return $(window).scrollTop(); }   
+      // Check if the browser supports the progress element.
+      if ('max' in document.createElement('progress')) {
+        // Set the 'max' attribute for the first time.
+        progressBar.attr({ max: getMax() });
+        progressBar.attr({ value: getValue() });
+    
+        $(document).on('scroll', function() {
+          // On scroll only the 'value' attribute needs to be calculated.
+          progressBar.attr({ value: getValue() });
+        });
+
+        $(window).resize(function() {
+          var navbarHeight = $('#navbar').outerHeight(true);
+          $('body').css({ 'padding-top': navbarHeight });
+          $('progress-container').css({ 'padding-top': navbarHeight });
+          progressBar.css({ 'top': navbarHeight });
+          // On resize, both the 'max' and 'value' attributes need to be calculated.
+          progressBar.attr({ max: getMax(), value: getValue() });
+        });
+      } else {
+        var max = getMax(), value, width;
+        var getWidth = function() {
+          // Calculate the window width as a percentage.
+          value = getValue();
+          width = (value/max) * 100;
+          width = width + '%';
+          return width;
+        }
+        var setWidth = function() { progressBar.css({ width: getWidth() }); };
+        setWidth();
+        $(document).on('scroll', setWidth);
+        $(window).on('resize', function() {
+          // Need to reset the 'max' attribute.
+          max = getMax();
+          setWidth();
+        });
+      }
+    });
+  </script>
+
+  <!-- Code Syntax Highlighting -->
+  <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
+  <script src="/assets/js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+
+  <!-- Script Used for Randomizing the Projects Order -->
+  <!-- <script type="text/javascript">
+    $.fn.shuffleChildren = function() {
+      $.each(this.get(), function(index, el) {
+        var $el = $(el);
+        var $find = $el.children();
+
+        $find.sort(function() {
+          return 0.5 - Math.random();
+        });
+
+        $el.empty();
+        $find.appendTo($el);
+      });
+    };
+    $("#projects").shuffleChildren();
+  </script> -->
+
+  <!-- Project Cards Layout -->
+  <script type="text/javascript">
+    var $grid = $('#projects');
+
+    // $grid.masonry({ percentPosition: true });
+    // $grid.masonry('layout');
+
+    // Trigger after images load.
+    $grid.imagesLoaded().progress(function() {
+      $grid.masonry({ percentPosition: true });
+      $grid.masonry('layout');
+    });
+  </script>
+
+  <!-- Enable Tooltips -->
+  <script type="text/javascript">
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+  </script>
+
+  <!-- Google Analytics -->
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', '', 'auto');
+    ga('send', 'pageview');
+  </script>
+</body>
+</html>
