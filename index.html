@@ -118,11 +118,23 @@
         </table>
 
           <table style="width:100%;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
-          <tr>
+          <tr onmouseout="pointarena_stop()" onmouseover="pointarena_start()">
             <td style="padding:20px;width:25%;vertical-align:middle">
               <div class="one">
-                <img src='images/placeholder.jpg' width="180">
+                <div class="two" id='probing_img'>
+                  <img src='images/probing.gif' width="180"></div>
+                <img src='images/probing.gif' width="180">
               </div>
+              <script type="text/javascript">
+                function LYS_start() {
+                  document.getElementById('probing_img').style.opacity = "1";
+                }
+
+                function LYS_stop() {
+                  document.getElementById('probing_img').style.opacity = "0";
+                }
+                LYS_stop()
+              </script>
             </td>
             <td style="padding:20px;width:75%;vertical-align:middle">
               <a href="#">
@@ -138,6 +150,8 @@
               <br>
               <em><b>ICML 2026 Mechanistic Interpretability workshop</b></em>
               <br>
+              <a href="https://vid-rep-pca.netlify.app/">project page</a>
+              /
               <a href="https://arxiv.org/abs/2609.01551">arXiv</a>
               <p></p>
               <p>
